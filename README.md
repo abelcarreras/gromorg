@@ -57,7 +57,7 @@ calc = GromOrg(structure,
                supercell=[3, 3, 3])
 
 trajectory, energy = calc.run_md(delete_scratch=True, # delete temp files when finished 
-                                 whole=True,          # show whole molecules in trajectory (unwrap)
+                                 whole=True,          # show whole molecules in trajectory
                                  silent=False)        # print MD log info in screen
 
 plt.plot(energy['potential'], label='potential')
