@@ -69,3 +69,11 @@ trajectory.save('trajectory.gro')
 
 plt.show()
 ```
+
+Contact info
+------------
+Abel Carreras  
+abelcarreras83@gmail.com
+
+Donostia International Physics Center (DIPC)  
+Donostia-San Sebastian, Euskadi (Spain)
