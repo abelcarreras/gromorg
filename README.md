@@ -5,7 +5,7 @@ A simple python tool to run MD simulations of small organic molecules with groma
 
 Features
 --------
-- Use pyqchem to link first principles & molecular mechanics calculations
+- Use PyQchem to link first principles & molecular mechanics calculations
 - Get parameters from SwissParam automatically
 - Clean run without intermediate files
 
