@@ -37,18 +37,18 @@ structure = Structure(coordinates=[[ 0.6695, 0.0000, 0.0000],
 
 
 gmx_params = {# Run paramters
-          'integrator': 'md-vv',     # Verlet integrator
-          'nsteps': 5000,            # 0.001 * 5000 = 50 ps
-          'dt': 0.001,               # time step, in ps
-          # Temperature coupling is on
-          'tcoupl': 'nose-hoover',    # Nose-Hoover thermostat
-          'tau_t': 0.3,               # time constant, in ps
-          'ref_t': 300,               # reference temperature, one for each group, in K
-          # Bond parameters
-          'gen_vel': 'yes',           # assign velocities from Maxwell distributio
-          'gen_temp': 300,            # temperature for Maxwell distribution
-          'gen_seed': -1,             # generate a random seed
-          }
+             'integrator': 'md-vv',     # Verlet integrator
+             'nsteps': 5000,            # 0.001 * 5000 = 50 ps
+             'dt': 0.001,               # time step, in ps
+             # Temperature coupling is on
+             'tcoupl': 'nose-hoover',    # Nose-Hoover thermostat
+             'tau_t': 0.3,               # time constant, in ps
+             'ref_t': 300,               # reference temperature, one for each group, in K
+             # Bond parameters
+             'gen_vel': 'yes',           # assign velocities from Maxwell distributio
+             'gen_temp': 300,            # temperature for Maxwell distribution
+             'gen_seed': -1,             # generate a random seed
+             }
 
 calc = GromOrg(structure, 
                params=gmx_params,        # MDP parms 
