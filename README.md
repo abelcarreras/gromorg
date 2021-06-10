@@ -64,10 +64,9 @@ plt.plot(energy['potential'], label='potential')
 plt.plot(energy['kinetic'], label='kinetic')
 plt.plot(energy['total'], label='total')
 plt.legend()
-
-trajectory.save('trajectory.gro')
-
 plt.show()
+
+trajectory.save('trajectory.gro')  # Store trajectory in GRO file
 ```
 
 Contact info
