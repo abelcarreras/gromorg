@@ -5,10 +5,10 @@ import os
 from gromorg.swisparam import SwissParams
 from gromorg.utils import extract_energy
 import numpy as np
-
+from gromorg.capture import captured_stdout
 
 class GromOrg:
-    def __init__(self, structure, box=(10, 10, 10), angles=None, supercell=(1, 1, 1), omp_num_threads=6):
+    def __init__(self, structure, params=None, box=(10, 10, 10), angles=None, supercell=(1, 1, 1), omp_num_threads=6):
         self._structure = structure
         self._filename = 'test'
         self._box = np.array(box)/10.0  # from Angs to nm
@@ -22,52 +22,51 @@ class GromOrg:
         os.mkdir(self._work_dir)
         self._filename_dir = self._work_dir + self._filename
 
-    def get_mdp(self):
-        params = {'title': 'NVT equilibration',
-                  # Run paramters
-                  'integrator': 'md-vv',  # Verlet integrator
-                  'nsteps': 5000,         # 0.001 * 5000 = 50 ps
-                  'dt': 0.001,            # ps
-                  # Output control
-                  'nstxout':   10,        # save coordinates every 1.0 ps
-                  'nstvout':   10,        # save velocities every 1.0 ps
-                  'nstenergy': 10,        # save energies every 1.0 ps
-                  'nstlog':    10,        # update log file every 1.0 ps
-                  # Bond parameters
-                  'continuation': 'no',   # first dynamics run
-                  'cutoff-scheme': 'Verlet', # Buffered neighbor searching
-                  'verlet-buffer-tolerance': 3.3e-03,
-                  'ns_type': 'grid',      # search neighboring grid cells
-                  'nstlist': 10,          # 20 fs, largely irrelevant with Verlet
-                  'rcoulomb': 1.0,        # short-range electrostatic cutoff (in nm)
-                  'rvdw': 1.0,            # short-range van der Waals cutoff (in nm)
-                  'DispCorr': 'EnerPres', # account for cut-off vdW scheme
-                  # Electrostatics
-                  'coulombtype': 'PME',   # Particle Mesh Ewald for long-range electrostatics
-                  'pme_order': 4,         # cubic interpolation
-                  'fourierspacing': 0.16, # grid spacing for FFT
-                  # Temperature coupling is on
-                  'tcoupl': 'nose-hoover', # Nose-Hoover thermostat
-                  'tc-grps': 'LIG',       # one coupling group
-                  'tau_t': 0.3,           # time constant, in ps
-                  'ref_t': 100,           # reference temperature, one for each group, in K
-                  # Pressure coupling is off
-                  'pcoupl': 'no',         # no pressure coupling in NVT
-                  # Periodic boundary conditions
-                  'pbc': 'xyz',           # 3-D PBC
-                  # Velocity generation
-                  'gen_vel': 'yes',       # assign velocities from Maxwell distributio
-                  'gen_temp': 10,         # temperature for Maxwell distribution
-                  'gen_seed': -1,         # generate a random seed
-                  # Simulated annealing
-                  #'annealing': 'single',
-                  #'annealing_npoints': 3,
-                  #'annealing_time': '0 20 40',
-                  #'annealing_temp': '100 500 100'
-                  }
+        # Default parameters
+        self._params = {'title': 'NVT equilibration',
+                        # Run paramters
+                        'integrator': 'md-vv',     # Verlet integrator
+                        'nsteps': 5000,            # 0.001 * 5000 = 50 ps
+                        'dt': 0.001,               # ps
+                        # Output control
+                        'nstxout': 1,              # save coordinates every 0.001 ps
+                        'nstvout': 1,              # save velocities every 0.001 ps
+                        'nstenergy': 1,            # save energies every 0.001 ps
+                        'nstlog': 100,             # update log file every 0.1 ps
+                        # Bond parameters
+                        'continuation': 'no',       # first dynamics run
+                        'cutoff-scheme': 'Verlet',  # Buffered neighbor searching
+                        'verlet-buffer-tolerance': 3.3e-03,
+                        'ns_type': 'grid',          # search neighboring grid cells
+                        'nstlist': 10,              # 20 fs, largely irrelevant with Verlet
+                        'rcoulomb': 1.0,            # short-range electrostatic cutoff (in nm)
+                        'rvdw': 1.0,                # short-range van der Waals cutoff (in nm)
+                        'DispCorr': 'EnerPres',     # account for cut-off vdW scheme
+                        # Electrostatics
+                        'coulombtype': 'PME',       # Particle Mesh Ewald for long-range electrostatics
+                        'pme_order': 4,             # cubic interpolation
+                        'fourierspacing': 0.16,     # grid spacing for FFT
+                        # Temperature coupling is on
+                        'tcoupl': 'nose-hoover',    # Nose-Hoover thermostat
+                        'tc-grps': 'LIG',           # one coupling group
+                        'tau_t': 0.3,               # time constant, in ps
+                        'ref_t': 100,               # reference temperature, one for each group, in K
+                        # Pressure coupling is off
+                        'pcoupl': 'no',             # no pressure coupling in NVT
+                        # Periodic boundary conditions
+                        'pbc': 'xyz',               # 3-D PBC
+                        # Velocity generation
+                        'gen_vel': 'yes',           # assign velocities from Maxwell distributio
+                        'gen_temp': 10,             # temperature for Maxwell distribution
+                        'gen_seed': -1,            # generate a random seed
+                        }
 
+        if params is not None:
+            self._params.update(params)
+
+    def get_mdp(self):
         file = ';Autogenerated MDP\n'
-        for keys, values in params.items():
+        for keys, values in self._params.items():
             file += '{:30} = {}\n'.format(keys, values)
 
         return file
@@ -149,7 +148,6 @@ class GromOrg:
         if grompp.output.returncode.result() != 0:
             print(grompp.output.erroroutput.result())
 
-
         grompp = gmx.commandline_operation('gmx', 'grompp',
                                            input_files={'-f': self._filename_dir + '.mdp',
                                                         '-c': self._filename_dir + '.gro',
@@ -165,19 +163,26 @@ class GromOrg:
 
         return tpr_data
 
-    def run_md(self, delete_scratch=True, whole=False):
+    def run_md(self, delete_scratch=True, whole=False, silent=False):
 
         md = gmx.mdrun(input=self.get_tpr())
 
-        md.run()
+        with captured_stdout() as e:
+            md.run()
+            e.seek(0)
+            capture = e.read()
+
+        if silent:
+            with open(self._filename_dir + '.log', 'wb') as f:
+                f.write(capture)
+        else:
+            print(capture.decode())
 
         trajectory_file = md.output.trajectory.result()
         md_data_dir = md.output._work_dir.result()
 
-        #print('trajectory file:', trajectory_file)
-        #print('workdir: ', md.output._work_dir.result())
-
-        #gmx trjconv -f nvt.trr -s nvt.tpr -o output.gro -pbc whole
+        # print('trajectory file:', trajectory_file)
+        # print('workdir: ', md.output._work_dir.result())
 
         if whole:
             grompp = gmx.commandline_operation('gmx', 'trjconv',
