@@ -1,7 +1,7 @@
 GroMorG
 =======
 
-A simple tool to run simulations of small organic molecules with gromacs
+A simple python tool to run MD simulations of small organic molecules with gromacs
 
 Features
 --------
