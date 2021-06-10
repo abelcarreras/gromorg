@@ -1,4 +1,4 @@
-GROMORG
+GroMorG
 =======
 
 A simple tool to run simulations of small organic molecules with gromacs
