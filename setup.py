@@ -19,7 +19,7 @@ setup(name='gromorg',
       author='Abel Carreras',
       author_email='abelcarreras83@gmail.com',
       packages=['gromorg'],
-      # url='https://github.com/abelcarreras/gromorg',
+      url='https://github.com/abelcarreras/gromorg',
       classifiers=[
           "Programming Language :: Python",
           "License :: OSI Approved :: MIT License"]
