@@ -175,16 +175,11 @@ class GromOrg:
 
         md = gmx.mdrun(input=self.get_tpr())
 
-        with captured_stdout() as e:
-            md.run()
-            e.seek(0)
-            capture = e.read()
-
         if self._silent:
-            with open(self._filename_dir + '.log', 'wb') as f:
-                f.write(capture)
+            with captured_stdout(self._filename_dir + '.log'):
+                md.run()
         else:
-            print(capture.decode())
+            md.run()
 
         trajectory_file = md.output.trajectory.result()
         md_data_dir = md.output._work_dir.result()

@@ -1,13 +1,14 @@
-import sys, os, io, tempfile
+import sys, os, io
 
 
 class captured_stdout:
-    def __init__(self):
+    def __init__(self, filename):
         self.old_stdout = None
         self.fnull = None
+        self._filename = filename
 
     def __enter__(self):
-        self.F = tempfile.NamedTemporaryFile()
+        self.F = open(self._filename, 'w')
         try:
             self.old_error = os.dup(sys.stderr.fileno())
             os.dup2(self.F.fileno(), sys.stderr.fileno())
