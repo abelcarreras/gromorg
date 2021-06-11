@@ -4,6 +4,7 @@ import time
 import io
 from zipfile import ZipFile
 import openbabel
+from gromorg.cache import SimpleCache
 
 
 class SwissParams:
@@ -14,6 +15,8 @@ class SwissParams:
 
         self._zip_data = None
         self._url_data = None
+
+        self._cache = SimpleCache()
 
     def get_mol2(self):
         obConversion = openbabel.OBConversion()
@@ -83,8 +86,15 @@ class SwissParams:
         return self._url_data
 
     def get_data_contents(self):
-        input_zip = ZipFile(io.BytesIO(self.get_zip_file()))
-        return {name: input_zip.read(name) for name in input_zip.namelist()}
+
+        files_dict = self._cache.retrieve_calculation_data(self._structure, 'zip_files')
+
+        if files_dict is None:
+            input_zip = ZipFile(io.BytesIO(self.get_zip_file()))
+            files_dict = {name: input_zip.read(name) for name in input_zip.namelist()}
+            self._cache.store_calculation_data(self._structure, 'zip_files', files_dict)
+
+        return files_dict
 
     def get_itp_data(self):
         return self.get_data_contents()[self._filename + '.itp'].decode()
