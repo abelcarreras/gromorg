@@ -1,5 +1,5 @@
 import sys, pickle, time, fcntl
-
+import warnings
 
 # Singleton class to handle cache
 class SimpleCache:
@@ -34,25 +34,25 @@ class SimpleCache:
         try:
             with open(self._calculation_data_filename, 'rb') as input:
                 self._calculation_data = pickle.load(input)
-                print('Loaded data from {}'.format(self._calculation_data_filename))
+                # print('Loaded data from {}'.format(self._calculation_data_filename))
         except (IOError, EOFError, BlockingIOError):
-            print('Creating new calculation data file {}'.format(self._calculation_data_filename))
+            # print('Creating new calculation data file {}'.format(self._calculation_data_filename))
             self._calculation_data = {}
         except (UnicodeDecodeError):
-            print('Warning: Calculation data file is corrupted and will be overwritten')
+            warnings.warn('Warning: Calculation data file is corrupted and will be overwritten')
             self._calculation_data = {}
 
     def redefine_calculation_data_filename(self, filename):
 
         self._calculation_data_filename = filename
-        print('Set data file to {}'.format(self._calculation_data_filename))
+        # print('Set data file to {}'.format(self._calculation_data_filename))
 
         try:
             with open(self._calculation_data_filename, 'rb') as input:
                 self._calculation_data = pickle.load(input)
-                print('Loaded data from {}'.format(self._calculation_data_filename))
+                # print('Loaded data from {}'.format(self._calculation_data_filename))
         except (IOError, EOFError):
-            print('Creating new calculation data file {}'.format(self._calculation_data_filename))
+            # print('Creating new calculation data file {}'.format(self._calculation_data_filename))
             self._calculation_data = {}
 
     def store_calculation_data(self, input_qchem, keyword, data, timeout=60):
@@ -65,7 +65,7 @@ class SimpleCache:
                 self._calculation_data = {}
                 continue
             except (UnicodeDecodeError):
-                print('Warning: {} file is corrupted and will be overwritten'.format(self._calculation_data_filename))
+                warnings.warn('Warning: {} file is corrupted and will be overwritten'.format(self._calculation_data_filename))
                 self._calculation_data = {}
             except (BlockingIOError, IOError, EOFError):
                 # print('read_try: {}'.format(iter))

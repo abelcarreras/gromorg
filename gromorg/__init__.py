@@ -8,12 +8,20 @@ import numpy as np
 from gromorg.capture import captured_stdout
 
 class GromOrg:
-    def __init__(self, structure, params=None, box=(10, 10, 10), angles=None, supercell=(1, 1, 1), omp_num_threads=6):
+    def __init__(self, structure,
+                 params=None,
+                 box=(10, 10, 10),
+                 angles=None,
+                 supercell=(1, 1, 1),
+                 omp_num_threads=6,
+                 silent=False):
+
         self._structure = structure
         self._filename = 'test'
         self._box = np.array(box)/10.0  # from Angs to nm
         self._supercell = supercell
         self._angles = angles
+        self._silent = silent
 
         os.putenv('GMX_MAXBACKUP', '-1')
         os.putenv('OMP_NUM_THREADS', '{}'.format(omp_num_threads))
@@ -92,7 +100,7 @@ class GromOrg:
         return file
 
     def get_tpr(self):
-        sw = SwissParams(self._structure)
+        sw = SwissParams(self._structure, silent=self._silent)
 
         files = {'itp': sw.get_itp_data(),
                  'pdb': sw.get_pdb_data(),
@@ -163,7 +171,7 @@ class GromOrg:
 
         return tpr_data
 
-    def run_md(self, delete_scratch=True, whole=False, silent=False):
+    def run_md(self, delete_scratch=True, whole=False):
 
         md = gmx.mdrun(input=self.get_tpr())
 
@@ -172,7 +180,7 @@ class GromOrg:
             e.seek(0)
             capture = e.read()
 
-        if silent:
+        if self._silent:
             with open(self._filename_dir + '.log', 'wb') as f:
                 f.write(capture)
         else:

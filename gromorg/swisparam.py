@@ -9,9 +9,10 @@ from gromorg.cache import SimpleCache
 
 class SwissParams:
 
-    def __init__(self, structure):
+    def __init__(self, structure, silent=False):
         self._structure = structure
         self._filename = 'test'
+        self._silent = silent
 
         self._zip_data = None
         self._url_data = None
@@ -38,20 +39,23 @@ class SwissParams:
 
         r_data = req.get(url_data, allow_redirects=True)
 
-        print('connecting to SwissParam...')
+        if not self._silent:
+            print('connecting to SwissParam...')
         while 'Your job is currently being performed' in r_data.text:
             r_data = req.get(url_data, allow_redirects=True)
-            print('waiting...')
+            if not self._silent:
+                print('waiting...')
             time.sleep(wait_time)
 
         r = req.get(url_zip, allow_redirects=True)
 
         if r.status_code == 404:
             print(r_data.text)
-            print('Failed!')
-            return None
+            raise Exception('Failed retrieving parameters from SwissParam')
 
-        print('done!')
+        if not self._silent:
+            print('done')
+
         self._zip_data = r.content
 
         r.close()

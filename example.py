@@ -30,11 +30,11 @@ params = {# Run paramters
           'gen_seed': -1,             # generate a random seed
           }
 
-calc = GromOrg(structure, params=params, box=[10, 10, 10], angles=[90, 123.570, 90], supercell=[3, 3, 3])
+calc = GromOrg(structure, params=params, box=[10, 10, 10], angles=[90, 123.570, 90], supercell=[3, 3, 3], silent=True)
 
 print(calc.get_mdp())
 
-trajectory, energy = calc.run_md(delete_scratch=True, whole=True, silent=True)
+trajectory, energy = calc.run_md(delete_scratch=True, whole=True)
 
 plt.plot(energy['potential'], label='potential')
 plt.plot(energy['kinetic'], label='kinetic')

@@ -54,11 +54,12 @@ calc = GromOrg(structure,
                params=gmx_params,        # MDP parms 
                box=[10, 10, 10],         # a, b, c in angstrom
                angles=[90, 123.570, 90], # alpha, beta, gamma in degree
-               supercell=[3, 3, 3])
+               supercell=[3, 3, 3],
+               silent=False)             # print MD log info in screen
 
 trajectory, energy = calc.run_md(delete_scratch=True, # delete temp files when finished 
-                                 whole=True,          # show whole molecules in trajectory
-                                 silent=False)        # print MD log info in screen
+                                 whole=True)          # show whole molecules in trajectory
+        
 
 plt.plot(energy['potential'], label='potential')
 plt.plot(energy['kinetic'], label='kinetic')
