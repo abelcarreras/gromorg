@@ -1,5 +1,7 @@
 import numpy as np
+import gmxapi as gmx
 import os
+
 
 def extract_energy(edr_file, output='property.xvg', initial=0, option=None):
     """
@@ -23,14 +25,13 @@ def extract_energy(edr_file, output='property.xvg', initial=0, option=None):
     if option is None:
         option = '11, 12, 13'
 
-    from subprocess import Popen, PIPE
+    grompp = gmx.commandline_operation('gmx', 'energy',
+                                       stdin=option,
+                                       input_files={'-f': edr_file},
+                                       output_files={'-o': 'property.xvg'})
 
-    command = 'gmx energy -f {} -o property.xvg'.format(edr_file, output).split()
-    qchem_process = Popen(command, stdout=PIPE, stdin=PIPE, stderr=PIPE, shell=False)
-    (output, err) = qchem_process.communicate(input='{}\n'.format(option).encode())
-    qchem_process.wait()
-    output = output.decode()
-    err = err.decode()
+    if grompp.output.returncode.result() != 0:
+        print(grompp.output.erroroutput.result())
 
     data = np.loadtxt('property.xvg', comments=['#', '@'])[initial:].T
     os.remove('property.xvg')
@@ -44,4 +45,3 @@ def extract_energy(edr_file, output='property.xvg', initial=0, option=None):
                 'total': list(data[3])}
     else:
         return data
-
