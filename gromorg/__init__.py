@@ -7,6 +7,7 @@ from gromorg.utils import extract_energy
 import numpy as np
 from gromorg.capture import captured_stdout
 
+
 class GromOrg:
     def __init__(self, structure,
                  params=None,
@@ -14,7 +15,8 @@ class GromOrg:
                  angles=None,
                  supercell=(1, 1, 1),
                  omp_num_threads=6,
-                 silent=False):
+                 silent=False,
+                 delete_scratch=True):
 
         self._structure = structure
         self._filename = 'test'
@@ -22,12 +24,18 @@ class GromOrg:
         self._supercell = supercell
         self._angles = angles
         self._silent = silent
+        self._delete_scratch = delete_scratch
 
         os.putenv('GMX_MAXBACKUP', '-1')
         os.putenv('OMP_NUM_THREADS', '{}'.format(omp_num_threads))
 
         self._work_dir = 'gromorg_{}/'.format(os.getpid())
-        os.mkdir(self._work_dir)
+        # os.mkdir(self._work_dir)
+        try:
+            os.mkdir(self._work_dir)
+        except FileExistsError:
+            pass
+
         self._filename_dir = self._work_dir + self._filename
 
         # Default parameters
@@ -171,7 +179,7 @@ class GromOrg:
 
         return tpr_data
 
-    def run_md(self, delete_scratch=True, whole=False):
+    def run_md(self, whole=False):
 
         md = gmx.mdrun(input=self.get_tpr())
 
@@ -204,12 +212,81 @@ class GromOrg:
 
         energy = extract_energy(md_data_dir + '/ener.edr', initial=0)
 
-        if delete_scratch:
+        if self._delete_scratch:
             import shutil
             shutil.rmtree(md.output._work_dir.result())
-            shutil.rmtree(self._work_dir)
+            # shutil.rmtree(self._work_dir)
 
         return trajectory, energy
+
+    def get_forces(self):
+
+        force_input = gmx.modify_input(input=self.get_tpr(), parameters={'nsteps': 1, 'nstfout': 1})
+
+        md = gmx.mdrun(input=force_input)
+
+        if self._silent:
+            with captured_stdout(self._filename_dir + '.log'):
+                md.run()
+        else:
+            md.run()
+
+        trajectory_file = md.output.trajectory.result()
+        md_data_dir = md.output._work_dir.result()
+
+        # print('trajectory file:', trajectory_file)
+        # print('workdir: ', md.output._work_dir.result())
+
+        grompp = gmx.commandline_operation('gmx', ['traj', '-of'],
+                                           stdin='0',
+                                           input_files={'-f': trajectory_file,
+                                                        '-s': self._filename_dir + '.tpr',
+                                                        '-b': '0',
+                                                        '-e': '0',
+                                                        },
+                                           # output_files={'-o': md_data_dir + '/{}.trr'.format(self._filename)}
+                                           )
+
+        if grompp.output.returncode.result() != 0:
+            print(grompp.output.erroroutput.result())
+
+        forces = np.loadtxt('force.xvg', comments=['#', '@'])[1:].reshape(-1, 3)
+        os.remove('force.xvg')
+
+        if self._delete_scratch:
+            import shutil
+            shutil.rmtree(md.output._work_dir.result())
+
+        return forces
+
+    def get_last_structure(self):
+        """
+        Returns the unitcell of the last step in pyqchem format (ignores supercell)
+        Intended to be used for unitcell minimization
+
+        :return:
+        """
+
+        trajectory = self.run_md(whole=True)[0]
+
+        last_unit_cell = trajectory.xyz[-1][:self._structure.get_number_of_atoms()]*10 # nm to angs
+
+        cc = np.average(last_unit_cell, axis=0)
+        last_unit_cell = last_unit_cell - cc  # centered in zero
+
+
+        from copy import deepcopy
+        opt_structure = deepcopy(self._structure)
+        opt_structure.set_coordinates(last_unit_cell)
+
+        return opt_structure
+
+
+
+    def __del__(self):
+        import shutil
+        if os.path.isdir(self._work_dir):
+            shutil.rmtree(self._work_dir)
 
 
 if __name__ == '__main__':

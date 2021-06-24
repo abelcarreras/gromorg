@@ -34,7 +34,7 @@ calc = GromOrg(structure, params=params, box=[10, 10, 10], angles=[90, 123.570, 
 
 print(calc.get_mdp())
 
-trajectory, energy = calc.run_md(delete_scratch=True, whole=True)
+trajectory, energy = calc.run_md(whole=True)
 
 plt.plot(energy['potential'], label='potential')
 plt.plot(energy['kinetic'], label='kinetic')
