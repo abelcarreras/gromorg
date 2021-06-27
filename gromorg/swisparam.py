@@ -5,6 +5,7 @@ import io
 from zipfile import ZipFile
 import openbabel
 from gromorg.cache import SimpleCache
+import numpy as np
 
 
 class SwissParams:
@@ -41,10 +42,16 @@ class SwissParams:
 
         if not self._silent:
             print('connecting to SwissParam...')
+            print('url: {}'.format(url_data))
+
+        n = 0
         while 'Your job is currently being performed' in r_data.text:
             r_data = req.get(url_data, allow_redirects=True)
             if not self._silent:
-                print('waiting...')
+                print('\b' * (np.mod(n - 1, 10) + 7), end="", flush=True)
+                print('waiting' + '.' * np.mod(n, 10), end="", flush=True)
+                n += 1
+
             time.sleep(wait_time)
 
         r = req.get(url_zip, allow_redirects=True)
@@ -54,7 +61,7 @@ class SwissParams:
             raise Exception('Failed retrieving parameters from SwissParam')
 
         if not self._silent:
-            print('done')
+            print('.done')
 
         self._zip_data = r.content
 
