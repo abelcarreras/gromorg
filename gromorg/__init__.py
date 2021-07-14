@@ -6,6 +6,7 @@ from gromorg.swisparam import SwissParams
 from gromorg.utils import extract_energy
 import numpy as np
 from gromorg.capture import captured_stdout
+import shutil
 
 
 class GromOrg:
@@ -39,8 +40,7 @@ class GromOrg:
         self._filename_dir = self._work_dir + self._filename
 
         # Default parameters
-        self._params = {'title': 'NVT equilibration',
-                        # Run paramters
+        self._params = {# Run paramters
                         'integrator': 'md-vv',     # Verlet integrator
                         'nsteps': 5000,            # 0.001 * 5000 = 50 ps
                         'dt': 0.001,               # ps
@@ -53,7 +53,7 @@ class GromOrg:
                         'continuation': 'no',       # first dynamics run
                         'cutoff-scheme': 'Verlet',  # Buffered neighbor searching
                         'verlet-buffer-tolerance': 3.3e-03,
-                        'ns_type': 'grid',          # search neighboring grid cells
+                        # 'ns_type': 'grid',          # search neighboring grid cells
                         'nstlist': 10,              # 20 fs, largely irrelevant with Verlet
                         'rcoulomb': 1.0,            # short-range electrostatic cutoff (in nm)
                         'rvdw': 1.0,                # short-range van der Waals cutoff (in nm)
@@ -281,10 +281,7 @@ class GromOrg:
 
         return opt_structure
 
-
-
     def __del__(self):
-        import shutil
         if os.path.isdir(self._work_dir):
             shutil.rmtree(self._work_dir)
 

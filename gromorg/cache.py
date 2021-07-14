@@ -1,6 +1,7 @@
 import sys, pickle, time, fcntl
 import warnings
 
+
 # Singleton class to handle cache
 class SimpleCache:
     __instance__ = None
@@ -55,7 +56,7 @@ class SimpleCache:
             # print('Creating new calculation data file {}'.format(self._calculation_data_filename))
             self._calculation_data = {}
 
-    def store_calculation_data(self, input_qchem, keyword, data, timeout=60):
+    def store_calculation_data(self, structure, keyword, data, timeout=60):
 
         for iter in range(100):
             try:
@@ -73,7 +74,7 @@ class SimpleCache:
                 continue
             break
 
-        self._calculation_data[(hash(input_qchem), keyword)] = data
+        self._calculation_data[(hash(structure), keyword)] = data
 
         for iter in range(100):
             try:

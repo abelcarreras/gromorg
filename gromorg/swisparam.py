@@ -29,6 +29,55 @@ class SwissParams:
 
         return obConversion.WriteString(mol)
 
+    def get_hashable_connectivity(self):
+
+        def sort_pairs(test):
+            sorted_1 = np.sort(test, axis=1)
+
+            sorted_2 = sorted(sorted_1, key=lambda x: x[1])
+            sorted_3 = sorted(sorted_2, key=lambda x: x[0])
+
+            return np.array(sorted_3)
+
+        class Connectivity():
+            def __init__(self, structure, use_types=False):
+
+                obConversion = openbabel.OBConversion()
+                obConversion.SetInAndOutFormats("xyz", "mol2")
+
+                mol = openbabel.OBMol()
+                obConversion.ReadString(mol, structure.get_xyz())
+
+                # mol.AddHydrogens()
+
+                atomic_data = []
+                for i in range(mol.NumAtoms()):
+                    if use_types:
+                        atomic_data.append((mol.GetAtom(i+1).GetFormalCharge(),
+                                            np.product([ord(c) for c in mol.GetAtom(i+1).GetType()]),
+                                            ))
+                    else:
+                        atomic_data.append((mol.GetAtom(i + 1).GetFormalCharge(),
+                                            mol.GetAtom(i + 1).GetAtomicNum()
+                                            ))
+
+                conn_index = []
+                for i in range(mol.NumBonds()):
+                    conn_index.append((mol.GetBond(i).GetBeginAtomIdx()-1, mol.GetBond(i).GetEndAtomIdx()-1))
+
+                conn_index = sort_pairs(conn_index)
+
+                self._connectivity = []
+                for i, j in conn_index:
+                    self._connectivity.append((atomic_data[i], atomic_data[j]))
+
+                return
+
+            def __hash__(self):
+                return hash(tuple(self._connectivity))
+
+        return Connectivity(self._structure, use_types=False)
+
     def get_zip_file(self, wait_time=10):
 
         if self._zip_data is not None:
@@ -98,12 +147,12 @@ class SwissParams:
 
     def get_data_contents(self):
 
-        files_dict = self._cache.retrieve_calculation_data(self._structure, 'zip_files')
+        files_dict = self._cache.retrieve_calculation_data(self.get_hashable_connectivity(), 'zip_files')
 
         if files_dict is None:
             input_zip = ZipFile(io.BytesIO(self.get_zip_file()))
             files_dict = {name: input_zip.read(name) for name in input_zip.namelist()}
-            self._cache.store_calculation_data(self._structure, 'zip_files', files_dict)
+            self._cache.store_calculation_data(self.get_hashable_connectivity(), 'zip_files', files_dict)
 
         return files_dict
 
@@ -113,3 +162,19 @@ class SwissParams:
     def get_pdb_data(self):
         return self.get_data_contents()[self._filename + '.pdb'].decode()
 
+
+if __name__ == '__main__':
+    from pyqchem.structure import Structure
+
+    structure = Structure(coordinates=[[ 0.6952, 0.0000, 0.0000],
+                                       [-0.6695, 0.0000, 0.0000],
+                                       [ 1.2321, 0.9289, 0.0000],
+                                       [ 1.2321,-0.9289, 0.0000],
+                                       [-1.2321, 0.9289, 0.0000],
+                                       [-1.2321,-0.9289, 0.0000]],
+                          symbols=['C', 'C', 'H', 'H', 'H', 'H'],
+                          charge=0,
+                          multiplicity=1)
+
+    sp = SwissParams(structure)
+    sp.get_hashable_connectivity()
