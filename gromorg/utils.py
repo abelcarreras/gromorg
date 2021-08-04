@@ -45,3 +45,23 @@ def extract_energy(edr_file, output='property.xvg', initial=0, option=None):
                 'total': list(data[3])}
     else:
         return data
+
+
+def extract_forces(trajectory_file, tpr_file, output='forces.xvg', step=500):
+
+    grompp = gmx.commandline_operation('gmx', ['traj', '-of'],
+                                       stdin='0',
+                                       input_files={'-f': trajectory_file,
+                                                    '-s': tpr_file,
+                                                    '-b': '{}'.format(step),
+                                                    '-e': '{}'.format(step),
+                                                    },
+                                       )
+
+    if grompp.output.returncode.result() != 0:
+        print(grompp.output.erroroutput.result())
+
+    forces = np.loadtxt('force.xvg', comments=['#', '@'])[1:].reshape(-1, 3)
+    os.remove('force.xvg')
+
+    return forces * 0.00103642723  # KJ/(mol nm) to eV/ang
