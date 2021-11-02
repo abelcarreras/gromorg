@@ -207,7 +207,6 @@ class GromOrg:
         else:
             self._forces = None
 
-
         if whole:
             grompp = gmx.commandline_operation('gmx', 'trjconv',
                                                stdin='0',
