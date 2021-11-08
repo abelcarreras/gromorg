@@ -17,6 +17,8 @@ class GromOrg:
                  angles=None,
                  supercell=(1, 1, 1),
                  solvent=None,
+                 solvent_scale=0.57,
+                 maxwarn=0,
                  omp_num_threads=1,
                  silent=False,
                  delete_scratch=True):
@@ -29,6 +31,8 @@ class GromOrg:
         self._silent = silent
         self._delete_scratch = delete_scratch
         self._solvent = solvent
+        self._solvent_scale = solvent_scale
+        self._maxwarn = maxwarn
 
         os.putenv('GMX_MAXBACKUP', '-1')
         os.putenv('OMP_NUM_THREADS', '{}'.format(omp_num_threads))
@@ -181,7 +185,8 @@ class GromOrg:
                                            input_files={'-f': self._filename_dir + '.mdp',
                                                         '-c': self._filename_dir + '.gro',
                                                         '-p': self._filename_dir + '.top',
-                                                        '-po': self._filename_dir + '_log.mdp'},
+                                                        '-po': self._filename_dir + '_log.mdp',
+                                                        '-maxwarn': '{}'.format(self._maxwarn)},
                                            output_files={'-o': self._filename_dir + '.tpr'})
         grompp.run()
 
@@ -199,13 +204,24 @@ class GromOrg:
         # solvent pdb
         pdb_solvent = sw_sol.get_pdb_data().replace('LIG', 'SOL')
 
+        # get box that fits solvent
+        coords = []
+        for line in pdb_solvent.split('\n'):
+            if line.strip().startswith('ATOM'):
+                coords.append(line.split()[5:8])
+
+        s_box = np.max(np.array(coords, dtype=float), axis=0) - np.min(np.array(coords, dtype=float), axis=0)
+        s_box = np.maximum([1.0, 1.0, 1.0], s_box)
+
         with open('{}_sol.pdb'.format(self._filename_dir), 'w') as f:
             f.write(pdb_solvent)
 
-        # pdb to gro
+        # pdb to gro + box
         grompp = gmx.commandline_operation('gmx', 'editconf',
                                            input_files={'-f': self._filename_dir + '_sol.pdb',
-                                                        '-box': ['1.0', '1.0', '1.0']
+                                                        '-box': ['{}'.format(s_box[0]),
+                                                                 '{}'.format(s_box[1]),
+                                                                 '{}'.format(s_box[2])],
                                                         },
 
                                            output_files={'-o': self._filename_dir + '_sol.gro'})
@@ -235,7 +251,7 @@ class GromOrg:
         grompp = gmx.commandline_operation('gmx', 'solvate',
                                            input_files={'-cp': self._filename_dir + '.gro',
                                                         '-cs': self._filename_dir + '_sol.gro',
-                                                        '-scale': '{}'.format(1.0),
+                                                        '-scale': '{}'.format(self._solvent_scale),
                                                         '-p': self._filename_dir + '_sol.top'},
                                            output_files={'-o': self._filename_dir + '.gro'})
         grompp.run()
