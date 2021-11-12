@@ -1,4 +1,7 @@
 __version__ = '0.2'
+
+import warnings
+
 import gmxapi as gmx
 import mdtraj
 import os
@@ -265,7 +268,14 @@ class GromOrg:
         os.remove(self._filename_dir + '_sol.top') # delete temp file
 
         # append solvent molecule info to topology
-        top.append_data('molecules', ['test_sol {}'.format(line_sol.split()[1])])
+        try:
+            n_solvent_mol = int(line_sol.split()[1])
+            top.append_data('molecules', ['test_sol {}'.format(n_solvent_mol)])
+
+        except IndexError:
+            warnings.warn('Solvent molecules do not fit in the supercell. '
+                          'Decrease the solvent size or increase solvent density using solvent_scale')
+
 
         return top, itp
 
