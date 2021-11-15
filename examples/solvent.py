@@ -23,10 +23,7 @@ solvent = Structure(coordinates=[[0.000000,  0.000000,  0.000000],
                       symbols=['O', 'H', 'H'])
 
 
-# Alternative: get molecules from PubChem
-# structure = get_geometry_from_pubchem('ethylene')
-# solvent = get_geometry_from_pubchem('water')
-
+# GROMACS parameters
 params = {# Run paramters
           'integrator': 'md-vv',     # Verlet integrator
           'nsteps': 5000,            # 0.001 * 5000 = 50 ps
@@ -41,15 +38,17 @@ params = {# Run paramters
           'gen_seed': -1,             # generate a random seed
           }
 
-
+# define simulation
 calc = GromOrg(structure,
-               params=params,
-               box=[60, 60, 60],
-               supercell=[1, 1, 1],
-               solvent=solvent,
-               solvent_scale=0.57,
+               params=params,        # main molecule in pyqchem Structure format
+               box=[10, 10, 10],     # a, b, c cell distances
+               supercell=[3, 3, 3],  # supercell
+               solvent=solvent,      # solvent in pyqchem Structure format
+               solvent_scale=0.57,   # solvent scale parameter
                )
 
+# run MD simulation
 trajectory, energy = calc.run_md(whole=True)
 
-trajectory.save('traj_etylene_sol.gro')
+# store trajectory in gro file
+trajectory.save('trajectory.gro')

@@ -65,3 +65,40 @@ def extract_forces(trajectory_file, tpr_file, output='forces.xvg', step=500):
     os.remove('force.xvg')
 
     return forces * 0.00103642723  # KJ/(mol nm) to eV/ang
+
+
+def pdb_to_xyz(pdb_xyz):
+    """
+    Convert a pdb file to xyz format
+    :param pdb_xyz:
+    :return:
+    """
+
+    def _label_to_element(label):
+        element = ''
+        for char in label:
+            if char.isnumeric():
+                break
+            element += char.strip()
+
+        list_changes = {'CA': 'C', 'HA': 'H'}
+        if element in list_changes:
+            element = list_changes[element]
+        return element
+
+    def iter_coordinates():
+        for line in pdb_xyz.split('\n'):
+            if line.startswith('ATOM'):
+                yield np.array(line[30:55].split(), dtype=float)
+
+    def iter_symbols():
+        for line in pdb_xyz.split('\n'):
+            if line.startswith('ATOM'):
+                yield _label_to_element(line[13:16])
+
+    xyz_txt = '{}\n'.format(len(list(iter_symbols())))
+    for s, c in zip(iter_symbols(), iter_coordinates()):
+        xyz_txt += '\n' + s + ' {:10.5f} {:10.5f} {:10.5f}'.format(*c)
+
+    return xyz_txt
+
