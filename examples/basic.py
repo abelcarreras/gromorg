@@ -1,7 +1,6 @@
 from gromorg import GromOrg
 import matplotlib.pyplot as plt
 from pyqchem.structure import Structure
-from pyqchem.tools import get_geometry_from_pubchem
 
 
 # Define molecule (ethylene) as pyqchem Structure
@@ -30,7 +29,7 @@ params = {# Run paramters
           }
 
 # Set up simulation
-calc = GromOrg(structure, params=params, box=[10, 10, 10], angles=[90, 123.570, 90], supercell=[3, 3, 3], silent=True)
+calc = GromOrg(structure, params=params, box=[10, 10, 10], angles=[90, 123.570, 90], supercell=[3, 3, 3])
 
 # print full GROMACS input
 print(calc.get_mdp())

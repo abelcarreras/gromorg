@@ -5,7 +5,7 @@ from gromorg.setparam import SetParams
 from pyqchem.structure import Structure
 
 # Initialize the SetParams with database file (append data if file exists)
-data = SetParams(filename='.parameter.pkl')
+data = SetParams(filename='.parameters.pkl')
 
 # Add parameters to database
 data.add_data('data/ethylene.itp', 'data/ethylene.pdb')  # ethylene

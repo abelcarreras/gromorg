@@ -6,7 +6,7 @@ import numpy as np
 
 class SetParams:
 
-    def __init__(self, filename='param_test.pkl'):
+    def __init__(self, filename='.parameters.pkl'):
         self._basename = 'test'
 
         self._cache = SimpleCache(filename=filename)
