@@ -18,15 +18,15 @@ Requirements
 - Openbabel (python API)
 - MDtraj 
 
-Example
--------
+Basic example
+-------------
 
 ```python
 from gromorg import GromOrg
 import matplotlib.pyplot as plt
 from pyqchem.structure import Structure
 
-
+# Define moleule as PyQchem Structure
 structure = Structure(coordinates=[[ 0.6695, 0.0000, 0.0000],
                                    [-0.6695, 0.0000, 0.0000],
                                    [ 1.2321, 0.9289, 0.0000],
@@ -35,8 +35,8 @@ structure = Structure(coordinates=[[ 0.6695, 0.0000, 0.0000],
                                    [-1.2321,-0.9289, 0.0000]],
                       symbols=['C', 'C', 'H', 'H', 'H', 'H'])
 
-
-gmx_params = {# Run paramters
+# Define Gromacs parameters
+gmx_params = {
              'integrator': 'md-vv',     # Verlet integrator
              'nsteps': 5000,            # 0.001 * 5000 = 50 ps
              'dt': 0.001,               # time step, in ps
@@ -50,24 +50,27 @@ gmx_params = {# Run paramters
              'gen_seed': -1,             # generate a random seed
              }
 
+# Define simulation
 calc = GromOrg(structure, 
                params=gmx_params,        # MDP parms 
                box=[10, 10, 10],         # a, b, c in angstrom
-               angles=[90, 123.570, 90], # alpha, beta, gamma in degree
+               angles=[90, 90, 90],      # alpha, beta, gamma in degree
                supercell=[3, 3, 3],
                delete_scratch=True,      # delete temp files when finished
                silent=False)             # print MD log info in screen
 
-trajectory, energy = calc.run_md(whole=True)          # show whole molecules in trajectory
-        
+# Run simulation and get trajectory (MDTraj) and energy
+trajectory, energy = calc.run_md(whole=True) 
 
+# plot energies
 plt.plot(energy['potential'], label='potential')
 plt.plot(energy['kinetic'], label='kinetic')
 plt.plot(energy['total'], label='total')
 plt.legend()
 plt.show()
 
-trajectory.save('trajectory.gro')  # Store trajectory in GRO file
+# Store trajectory
+trajectory.save('trajectory.gro')
 ```
 
 Contact info

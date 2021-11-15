@@ -15,9 +15,9 @@ from gromorg.data_structure import DataStructure
 
 class GromOrg:
     def __init__(self, structure,
-                 params=None,
+                 params,
                  box=(10, 10, 10),
-                 angles=None,
+                 angles=(90, 90, 90),
                  supercell=(1, 1, 1),
                  solvent=None,
                  solvent_scale=0.57,
@@ -279,7 +279,7 @@ class GromOrg:
 
         return top, itp
 
-    def run_md(self, whole=False, get_forces=False):
+    def run_md(self, whole=True, get_forces=False):
 
         md = gmx.mdrun(input=self.get_tpr())
 

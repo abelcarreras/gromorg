@@ -44,9 +44,9 @@ for ifame in np.linspace(2000, 5000, 500):
 
     # get random molecule sample from 500 frames between 2000 and 5000
     ires = np.random.randint(3*3*3)
-    molecule = mdtraj_to_pyqchem(trajectory, int(ifame), ires)
+    molecule = mdtraj_to_pyqchem(trajectory, int(ifame), ires)  # extract molecule from trajectory
 
-    # Qchem CIS calculation
+    # Qchem TD-DFT calculation
     qc_input = QchemInput(molecule,
                           jobtype='sp',
                           exchange='b3lyp',
