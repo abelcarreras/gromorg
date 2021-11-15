@@ -5,22 +5,21 @@ A simple python tool to run MD simulations of small organic molecules with groma
 
 Features
 --------
-- Use PyQchem to link first principles & molecular mechanics calculations
-- Get parameters from SwissParam automatically
+- Link first principles & molecular mechanics calculations using PyQchem (https://github.com/abelcarreras/PyQchem)
+- Get parameters from SwissParam (https://www.swissparam.ch) automatically from molecular structure
 - Clean run without intermediate files
-
+- Add solvent molecules to the system
+- Extract structures from the trajectory (including surrounding solvent molecules)
 
 Requirements
 ------------
-
 - PyQchem (https://github.com/abelcarreras/PyQchem)
-- Gromacs (gmxapi)
-- Openbabel (python API)
-- MDtraj 
+- Gromacs (gmxapi) (http://www.gromacs.org)
+- Openbabel (python API) (http://openbabel.org)
+- MDtraj (https://www.mdtraj.org)
 
 Basic example
 -------------
-
 ```python
 from gromorg import GromOrg
 import matplotlib.pyplot as plt
