@@ -3,7 +3,7 @@ from pyqchem.tools import get_geometry_from_pubchem
 from gromorg.tools import get_cluster
 
 
-# get structures from PubChem database
+# get structures from PubChem database (main and solvent)
 structure = get_geometry_from_pubchem('(S)-N-(3-(4-(2-hydroxy-1-phenylethylamino)-6-phenylfuro[2,3-d]pyrimidin-5-yl)phenyl)acrylamide')
 solvent = get_geometry_from_pubchem('water')
 
