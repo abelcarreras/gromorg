@@ -5,7 +5,8 @@
 GroMorG
 =======
 
-A python tool to automate the calculation of MD simulations of small organic molecules using gromacs.
+A python tool to automate the calculation of MD simulations of small organic molecules using gromacs.  
+Online documentation is available at https://gromorg.readthedocs.io/
 
 Features
 --------
