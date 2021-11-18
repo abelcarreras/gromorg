@@ -1,4 +1,6 @@
 [![Documentation Status](https://readthedocs.org/projects/gromorg/badge/?version=latest)](https://gromorg.readthedocs.io/en/latest/?badge=latest)
+[![PyPI version](https://badge.fury.io/py/gromorg.svg)](https://badge.fury.io/py/gromorg)
+
 
 GroMorG
 =======

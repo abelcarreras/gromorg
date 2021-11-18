@@ -22,5 +22,5 @@ Install
 
 2) From PyPI repository ::
 
-    pip install pyqchem --user
+    pip install gromorg --user
 
