@@ -47,7 +47,7 @@ def extract_energy(edr_file, output='property.xvg', initial=0, option=None):
         return data
 
 
-def extract_forces(trajectory_file, tpr_file, output='forces.xvg', step=500):
+def extract_forces(trajectory_file, tpr_file, step=500):
 
     grompp = gmx.commandline_operation('gmx', ['traj', '-of'],
                                        stdin='0',

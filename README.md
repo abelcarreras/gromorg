@@ -1,3 +1,5 @@
+[![Documentation Status](https://readthedocs.org/projects/gromorg/badge/?version=latest)](https://gromorg.readthedocs.io/en/latest/?badge=latest)
+
 GroMorG
 =======
 
