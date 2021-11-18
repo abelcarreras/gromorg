@@ -52,4 +52,13 @@ Also, ``center`` is a boolean parameter that can be used to center the molecule 
 value is a PyQchem Structure object that contains the molecule corresponding to ires and the molecules
 surrounding it at less than ``cutoff`` distance.
 
+.. note::
+    Notice that in the trajectory the first residue indices always correspond to the main molecule while the
+    others are solvent molecules. Using the value defined in ``supercell`` the user can figure out how many
+    main molecules are present in the trajectory.
 
+.. figure:: images/solvent.png
+   :scale: 50 %
+   :align: center
+
+   Simple example of the Structure (main mol + solvent) obtained using ``get_cluster`` function.
