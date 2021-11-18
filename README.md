@@ -1,11 +1,11 @@
 GroMorG
 =======
 
-A simple python tool to run MD simulations of small organic molecules with gromacs
+A python tool to automate the calculation of MD simulations of small organic molecules using gromacs.
 
 Features
 --------
-- Link first principles & molecular mechanics calculations using PyQchem (https://github.com/abelcarreras/PyQchem)
+- Link first principles & molecular mechanics calculations using PyQchem
 - Get parameters from SwissParam (https://www.swissparam.ch) automatically from molecular structure
 - Clean run without intermediate files
 - Add solvent molecules to the system
