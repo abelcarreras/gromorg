@@ -11,6 +11,7 @@ import numpy as np
 from gromorg.capture import captured_stdout
 import shutil
 from gromorg.data_structure import DataStructure
+from gromorg.utils import commandline_operation
 
 
 class GromOrg:
@@ -123,7 +124,7 @@ class GromOrg:
 
         # define unit cell and create gro file
         if self._angles is None:
-            grompp = gmx.commandline_operation('gmx', 'editconf',
+            commandline_operation('gmx', 'editconf',
                                                input_files={'-f': self._filename_dir + '.pdb',
                                                             '-box': ['{}'.format(self._box[0]),
                                                                      '{}'.format(self._box[1]),
@@ -131,7 +132,7 @@ class GromOrg:
 
                                                output_files={'-o': self._filename_dir + '.gro'})
         else:
-            grompp = gmx.commandline_operation('gmx',
+            commandline_operation('gmx',
                                                arguments=['editconf',
                                                           #'-noc'
                                                           ],
@@ -146,23 +147,15 @@ class GromOrg:
                                                             },
                                                output_files={'-o': self._filename_dir + '.gro'})
 
-        grompp.run()
-
-        if grompp.output.returncode.result() != 0:
-            print(grompp.output.erroroutput.result())
 
         # create supercell from unitcell
-        grompp = gmx.commandline_operation('gmx', 'genconf',
+        commandline_operation('gmx', 'genconf',
                                            input_files={'-f': self._filename_dir + '.gro',
                                                         '-nbox': ['{}'.format(self._supercell[0]),
                                                                   '{}'.format(self._supercell[1]),
                                                                   '{}'.format(self._supercell[2])],
                                                         },
                                            output_files={'-o': self._filename_dir + '.gro'})
-        grompp.run()
-
-        if grompp.output.returncode.result() != 0:
-            print(grompp.output.erroroutput.result())
 
         # get itp and topology data
         itp = DataStructure(sw.get_itp_data())
@@ -179,17 +172,13 @@ class GromOrg:
         with open('{}.itp'.format(self._filename_dir), 'w') as f:
             f.write(itp.get_txt())
 
-        grompp = gmx.commandline_operation('gmx', 'grompp',
+        commandline_operation('gmx', 'grompp',
                                            input_files={'-f': self._filename_dir + '.mdp',
                                                         '-c': self._filename_dir + '.gro',
                                                         '-p': self._filename_dir + '.top',
                                                         '-po': self._filename_dir + '_log.mdp',
                                                         '-maxwarn': '{}'.format(self._maxwarn)},
                                            output_files={'-o': self._filename_dir + '.tpr'})
-        grompp.run()
-
-        if grompp.output.returncode.result() != 0:
-            print(grompp.output.erroroutput.result())
 
         tpr_data = gmx.read_tpr(self._filename_dir + '.tpr')
 
@@ -215,7 +204,7 @@ class GromOrg:
             f.write(pdb_solvent)
 
         # pdb to gro + box
-        grompp = gmx.commandline_operation('gmx', 'editconf',
+        commandline_operation('gmx', 'editconf',
                                            input_files={'-f': self._filename_dir + '_sol.pdb',
                                                         '-box': ['{}'.format(s_box[0]),
                                                                  '{}'.format(s_box[1]),
@@ -223,11 +212,6 @@ class GromOrg:
                                                         },
 
                                            output_files={'-o': self._filename_dir + '_sol.gro'})
-
-        grompp.run()
-
-        if grompp.output.returncode.result() != 0:
-            print(grompp.output.erroroutput.result())
 
         # get solvent itp
         itp_solvent = DataStructure(sw_sol.get_itp_data().replace('LIG', 'SOL').replace('test', 'test_sol'))
@@ -246,16 +230,12 @@ class GromOrg:
         open(self._filename_dir + '_sol.top', 'w').close()  # temp file
 
         # solvate system with solvent
-        grompp = gmx.commandline_operation('gmx', 'solvate',
+        commandline_operation('gmx', 'solvate',
                                            input_files={'-cp': self._filename_dir + '.gro',
                                                         '-cs': self._filename_dir + '_sol.gro',
                                                         '-scale': '{}'.format(self._solvent_scale),
                                                         '-p': self._filename_dir + '_sol.top'},
                                            output_files={'-o': self._filename_dir + '.gro'})
-        grompp.run()
-
-        if grompp.output.returncode.result() != 0:
-            print(grompp.output.erroroutput.result())
 
         with open(self._filename_dir + '_sol.top', 'rb') as f:
             line_sol = f.read().decode('utf-8')
@@ -287,15 +267,12 @@ class GromOrg:
         md_data_dir = md.output._work_dir.result()
 
         if whole:
-            grompp = gmx.commandline_operation('gmx', 'trjconv',
+            commandline_operation('gmx', 'trjconv',
                                                stdin='0',
                                                input_files={'-f': trajectory_file,
                                                             '-s': self._filename_dir + '.tpr',
                                                             '-pbc': 'whole'},
                                                output_files={'-o': md_data_dir + '/{}.trr'.format(self._filename)})
-
-            if grompp.output.returncode.result() != 0:
-                print(grompp.output.erroroutput.result())
 
             trajectory_file = md_data_dir + '/{}.trr'.format(self._filename)
 

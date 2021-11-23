@@ -20,7 +20,7 @@ Requirements
 ------------
 - PyQchem (https://github.com/abelcarreras/PyQchem)
 - Gromacs (gmxapi) (http://www.gromacs.org)
-- Openbabel (python API) (http://openbabel.org)
+- Openbabel v2.x (python API) (http://openbabel.org)
 - MDtraj (https://www.mdtraj.org)
 
 Basic example
