@@ -41,7 +41,7 @@ params = {# Run paramters
 # define simulation
 calc = GromOrg(structure,
                params=params,        # main molecule in pyqchem Structure format
-               box=[10, 10, 10],     # a, b, c cell distances
+               box=[15, 15, 15],     # a, b, c cell distances
                supercell=[3, 3, 3],  # supercell
                solvent=solvent,      # solvent in pyqchem Structure format
                solvent_scale=0.57,   # solvent scale parameter

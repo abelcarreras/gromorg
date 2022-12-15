@@ -40,11 +40,11 @@ trajectory.save('trajectory.gro')
 
 # connection with Q-Chem
 excitation_energies = []
-for ifame in np.linspace(2000, 5000, 500):
+for iframe in np.linspace(2000, 5000, 500):
 
     # get random molecule sample from 500 frames between 2000 and 5000
     ires = np.random.randint(3*3*3)
-    molecule = mdtraj_to_pyqchem(trajectory, int(ifame), ires)  # extract molecule from trajectory
+    molecule = mdtraj_to_pyqchem(trajectory, frame=int(iframe), residue=ires)  # extract molecule from trajectory
 
     # Qchem TD-DFT calculation
     qc_input = QchemInput(molecule,
