@@ -49,15 +49,26 @@ def commandline_operation(program, arguments, stdin=None, input_files=None, outp
                       'Update to gmxapi >0.2 to get full functionally')
         return commandline_operation_v1(program, arguments, stdin, input_files, output_files)
 
-    grompp = gmx.commandline_operation(program, arguments,
+    arguments_split = []
+    for arg in arguments:
+        arguments_split += arg.split()
+
+    grompp = gmx.commandline_operation(program, arguments_split,
                                        stdin=stdin,
                                        input_files=input_files,
                                        output_files=output_files)
 
     grompp.run()
 
+
     if grompp.output.returncode.result() != 0:
-        print(grompp.output.erroroutput.result())
+        try:
+            print(grompp.output.stderr.result())
+        except AttributeError:
+            pass
+    else:
+        dir_path = grompp.output.directory.result()
+        os.removedirs(dir_path)
 
 
 def extract_energy(edr_file, output='property.xvg', initial=0, option=None):
@@ -82,13 +93,13 @@ def extract_energy(edr_file, output='property.xvg', initial=0, option=None):
     if option is None:
         option = '11, 12, 13'
 
-    commandline_operation('gmx', 'energy',
+    commandline_operation('gmx', ['energy'],
                                        stdin=option,
                                        input_files={'-f': edr_file},
-                                       output_files={'-o': 'property.xvg'})
+                                       output_files={'-o': edr_file + 'property.xvg'})
 
-    data = np.loadtxt('property.xvg', comments=['#', '@'])[initial:].T
-    os.remove('property.xvg')
+    data = np.loadtxt(edr_file + 'property.xvg', comments=['#', '@'])[initial:].T
+    os.remove(edr_file + 'property.xvg')
 
     data[1:, :] *= 0.010364272  # KJ/mol -> eV
 

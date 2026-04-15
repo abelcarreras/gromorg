@@ -1,22 +1,29 @@
 import requests as req
-from lxml import html
 import time
 import io
-from zipfile import ZipFile
-import openbabel
+import tarfile
+from openbabel import openbabel
 from gromorg.cache import SimpleCache
 import numpy as np
 
 
 class SwissParams:
 
-    def __init__(self, structure, silent=False):
+    BASE_URL = 'https://www.swissparam.ch:8443'
+
+    def __init__(self, structure, silent=False, approach='both'):
+        """
+        :param structure: molecular structure object
+        :param silent: suppress progress output
+        :param approach: parameterization approach — 'both' (default), 'mmff-based', or 'match'
+        """
         self._structure = structure
         self._filename = 'test'
         self._silent = silent
+        self._approach = approach
 
-        self._zip_data = None
-        self._url_data = None
+        self._tar_data = None
+        self._session_number = None
 
         self._cache = SimpleCache()
 
@@ -33,22 +40,17 @@ class SwissParams:
 
         def sort_pairs(test):
             sorted_1 = np.sort(test, axis=1)
-
             sorted_2 = sorted(sorted_1, key=lambda x: x[1])
             sorted_3 = sorted(sorted_2, key=lambda x: x[0])
-
             return np.array(sorted_3)
 
         class Connectivity():
             def __init__(self, structure, use_types=False):
-
                 obConversion = openbabel.OBConversion()
                 obConversion.SetInAndOutFormats("xyz", "mol2")
 
                 mol = openbabel.OBMol()
                 obConversion.ReadString(mol, structure.get_xyz())
-
-                # mol.AddHydrogens()
 
                 atomic_data = []
                 for i in range(mol.NumAtoms()):
@@ -71,96 +73,140 @@ class SwissParams:
                 for i, j in conn_index:
                     self._connectivity.append((atomic_data[i], atomic_data[j]))
 
-                return
-
             def __hash__(self):
                 return hash(tuple(self._connectivity))
 
         return Connectivity(self._structure, use_types=False)
 
-    def get_zip_file(self, wait_time=10):
+    def submit_file(self):
+        if self._session_number is not None:
+            return self._session_number
 
-        if self._zip_data is not None:
-            return self._zip_data
+        url = f'{self.BASE_URL}/startparam?approach={self._approach}'
 
-        url_data = self.submit_file()
+        files = {'myMol2': (self._filename + '.mol2',
+                            io.BytesIO(self.get_mol2().encode('utf-8')),
+                            'chemical/x-mol2')}
 
-        url_zip = url_data.replace('index.html', self._filename + '.zip')
+        r = req.post(url, files=files)
 
-        r_data = req.get(url_data, allow_redirects=True)
+        if not self._silent or not r.ok:
+            print(f'Server response ({r.status_code}): {r.text}')
+
+        r.raise_for_status()
+
+        for line in r.text.splitlines():
+            if 'Session number' in line:
+                self._session_number = line.split(':')[1].strip()
+                break
+
+        if self._session_number is None:
+            raise Exception(f'Failed to get session number. Response:\n{r.text}')
 
         if not self._silent:
-            print('connecting to SwissParam...')
-            print('url: {}'.format(url_data))
+            print(f'Submitted to SwissParam. Session number: {self._session_number}')
+
+        r.close()
+        return self._session_number
+
+    def _check_session(self, session_number):
+        """Return the status text for a session."""
+        url = f'{self.BASE_URL}/checksession?sessionNumber={session_number}'
+        r = req.get(url)
+        r.raise_for_status()
+        text = r.text
+        r.close()
+        return text
+
+    def get_tar_file(self, wait_time=10):
+        """Poll until the job is done, then return the raw tar.gz bytes."""
+
+        if self._tar_data is not None:
+            return self._tar_data
+
+        session_number = self.submit_file()
+
+        if not self._silent:
+            print('Waiting for SwissParam...')
 
         n = 0
-        while 'Your job is currently being performed' in r_data.text:
-            r_data = req.get(url_data, allow_redirects=True)
-            if not self._silent:
-                print('\b' * (np.mod(n - 1, 10) + 7), end="", flush=True)
-                print('waiting' + '.' * np.mod(n, 10), end="", flush=True)
-                n += 1
+        while True:
+            status = self._check_session(session_number)
 
-            time.sleep(wait_time)
+            if 'Calculation is finished' in status:
+                break
+            elif 'Calculation is in the queue' in status or 'Calculation currently running' in status:
+                if not self._silent:
+                    print('\b' * (np.mod(n - 1, 10) + 7), end="", flush=True)
+                    print('waiting' + '.' * np.mod(n, 10), end="", flush=True)
+                    n += 1
+                time.sleep(wait_time)
+            else:
+                raise Exception(f'Unexpected status from SwissParam:\n{status}')
 
-        r = req.get(url_zip, allow_redirects=True)
-
-        if r.status_code == 404:
-            print(r_data.text)
-            raise Exception('Failed retrieving parameters from SwissParam')
+        # Retrieve results as tar.gz
+        url = f'{self.BASE_URL}/retrievesession?sessionNumber={session_number}'
+        r = req.get(url)
+        r.raise_for_status()
 
         if not self._silent:
             print('.done')
 
-        self._zip_data = r.content
-
+        self._tar_data = r.content
         r.close()
-        r_data.close()
 
-        return self._zip_data
+        return self._tar_data
 
-    def store_param_zip(self, filename='params.zip'):
+    def store_param_tar(self, filename='params.tar.gz'):
         with open(filename, 'wb') as f:
-            f.write(self.get_zip_file())
-
-    def submit_file(self):
-
-        if self._url_data is not None:
-            return self._url_data
-
-        url = 'https://www.swissparam.ch/submit.php'
-
-        files = {'MAX_FILE_SIZE': '30000000',
-                 'mol2Files': (self._filename + '.mol2',
-                               io.StringIO(self.get_mol2()),
-                               'multipart/form-data')}
-
-        r = req.post(url, files=files)
-
-        tree = html.fromstring(r.content)
-
-        self._url_data = tree.xpath('//a[@class="sib_link"]/text()')[0]
-
-        r.close()
-
-        return self._url_data
+            f.write(self.get_tar_file())
 
     def get_data_contents(self):
-
-        files_dict = self._cache.retrieve_calculation_data(self.get_hashable_connectivity(), 'zip_files')
+        files_dict = self._cache.retrieve_calculation_data(self.get_hashable_connectivity(), 'tar_files')
 
         if files_dict is None:
-            input_zip = ZipFile(io.BytesIO(self.get_zip_file()))
-            files_dict = {name: input_zip.read(name) for name in input_zip.namelist()}
-            self._cache.store_calculation_data(self.get_hashable_connectivity(), 'zip_files', files_dict)
+            raw = self.get_tar_file()
+
+            # Debug: inspect the first bytes to identify format
+            if not self._silent:
+                print(f'Response first bytes: {raw[:16]}')
+
+            tar_bytes = io.BytesIO(raw)
+
+            # Try auto-detection: handles .tar, .tar.gz, .tar.bz2
+            try:
+                with tarfile.open(fileobj=tar_bytes, mode='r:*') as tar:
+                    files_dict = {}
+                    for member in tar.getmembers():
+                        f = tar.extractfile(member)
+                        if f is not None:
+                            name = member.name.split('/')[-1]
+                            files_dict[name] = f.read()
+            except tarfile.ReadError:
+                # Fallback: maybe it's still a zip
+                from zipfile import ZipFile
+                tar_bytes.seek(0)
+                with ZipFile(tar_bytes) as zf:
+                    files_dict = {name.split('/')[-1]: zf.read(name) for name in zf.namelist()}
+
+            self._cache.store_calculation_data(self.get_hashable_connectivity(), 'tar_files', files_dict)
 
         return files_dict
 
     def get_itp_data(self):
-        return self.get_data_contents()[self._filename + '.itp'].decode()
+        contents = self.get_data_contents()
+        # Find .itp file regardless of internal naming
+        itp_files = [k for k in contents if k.endswith('.itp')]
+        if not itp_files:
+            raise Exception('No .itp file found in SwissParam results')
+        return contents[itp_files[0]].decode()
 
     def get_pdb_data(self):
-        return self.get_data_contents()[self._filename + '.pdb'].decode()
+        contents = self.get_data_contents()
+        pdb_files = [k for k in contents if k.endswith('.pdb')]
+        if not pdb_files:
+            raise Exception('No .pdb file found in SwissParam results')
+        return contents[pdb_files[0]].decode()
 
 
 if __name__ == '__main__':
@@ -177,4 +223,3 @@ if __name__ == '__main__':
                           multiplicity=1)
 
     sp = SwissParams(structure)
-    sp.get_hashable_connectivity()

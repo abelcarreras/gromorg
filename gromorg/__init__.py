@@ -1,17 +1,16 @@
-__version__ = '0.2'
+__version__ = '0.3'
 
-import warnings
-
-import gmxapi as gmx
-import mdtraj
-import os
 from gromorg.swisparam import SwissParams
 from gromorg.utils import extract_energy, extract_forces
-import numpy as np
 from gromorg.capture import captured_stdout
-import shutil
 from gromorg.data_structure import DataStructure
 from gromorg.utils import commandline_operation
+import gmxapi as gmx
+import numpy as np
+import mdtraj
+import os
+import shutil
+import warnings
 
 
 class GromOrg:
@@ -22,7 +21,7 @@ class GromOrg:
                  supercell=(1, 1, 1),
                  solvent=None,
                  solvent_scale=0.57,
-                 maxwarn=0,
+                 maxwarn=1,
                  omp_num_threads=1,
                  silent=False,
                  delete_scratch=True):
@@ -41,7 +40,9 @@ class GromOrg:
         os.putenv('GMX_MAXBACKUP', '-1')
         os.putenv('OMP_NUM_THREADS', '{}'.format(omp_num_threads))
 
-        self._work_dir = 'gromorg_{}/'.format(os.getpid())
+        folder = os.getcwd()
+
+        self._work_dir = folder + 'gromorg_{}/'.format(os.getpid())
         # os.mkdir(self._work_dir)
         try:
             os.mkdir(self._work_dir)
@@ -106,7 +107,7 @@ class GromOrg:
                              '#include "charmm27.ff/forcefield.itp"',
                              '#include "{}.itp"'.format(self._filename)],
                          'system': ['molecular system name'],
-                         'molecules': ['{} {}\n'.format(self._filename, num_mol)]}
+                         'molecules': ['{} {}\n'.format('UNL1', num_mol)]}
 
         return DataStructure(topology_data)
 
@@ -122,40 +123,31 @@ class GromOrg:
         with open('{}.pdb'.format(self._filename_dir), 'w') as f:
             f.write(sw.get_pdb_data())
 
+
         # define unit cell and create gro file
         if self._angles is None:
-            commandline_operation('gmx', 'editconf',
-                                               input_files={'-f': self._filename_dir + '.pdb',
-                                                            '-box': ['{}'.format(self._box[0]),
-                                                                     '{}'.format(self._box[1]),
-                                                                     '{}'.format(self._box[2])]},
 
-                                               output_files={'-o': self._filename_dir + '.gro'})
+            commandline_operation('gmx',
+                                  arguments=['editconf',
+                                             '-box', '{} {} {}'.format(*self._box)],
+                                  input_files={'-f': self._filename_dir + '.pdb'},
+                                  output_files={'-o': self._filename_dir + '.gro'})
         else:
             commandline_operation('gmx',
-                                               arguments=['editconf',
-                                                          #'-noc'
-                                                          ],
-                                               input_files={'-f': self._filename_dir + '.pdb',
-                                                            '-box': ['{}'.format(self._box[0]),
-                                                                     '{}'.format(self._box[1]),
-                                                                     '{}'.format(self._box[2])],
-                                                            '-bt': 'triclinic',
-                                                            '-angles': ['{}'.format(self._angles[0]),
-                                                                        '{}'.format(self._angles[1]),
-                                                                        '{}'.format(self._angles[2])]
-                                                            },
-                                               output_files={'-o': self._filename_dir + '.gro'})
-
+                                  arguments=['editconf', #'-noc'
+                                            # '-f', self._filename_dir + '.pdb',
+                                             '-box {} {} {}'.format(*self._box),
+                                             '-bt triclinic',
+                                             '-angles {} {} {}'.format(*self._angles)],
+                                  input_files={'-f': self._filename_dir + '.pdb'},
+                                  output_files={'-o': self._filename_dir + '.gro'})
 
         # create supercell from unitcell
-        commandline_operation('gmx', 'genconf',
-                                           input_files={'-f': self._filename_dir + '.gro',
-                                                        '-nbox': ['{}'.format(self._supercell[0]),
-                                                                  '{}'.format(self._supercell[1]),
-                                                                  '{}'.format(self._supercell[2])],
-                                                        },
-                                           output_files={'-o': self._filename_dir + '.gro'})
+        commandline_operation('gmx',
+                              arguments=['genconf',
+                                         '-nbox {} {} {}'.format(*self._supercell)],
+                              input_files={'-f': self._filename_dir + '.gro'},
+                              output_files={'-o': self._filename_dir + '.gro'})
 
         # get itp and topology data
         itp = DataStructure(sw.get_itp_data())
@@ -172,13 +164,15 @@ class GromOrg:
         with open('{}.itp'.format(self._filename_dir), 'w') as f:
             f.write(itp.get_txt())
 
-        commandline_operation('gmx', 'grompp',
-                                           input_files={'-f': self._filename_dir + '.mdp',
-                                                        '-c': self._filename_dir + '.gro',
-                                                        '-p': self._filename_dir + '.top',
-                                                        '-po': self._filename_dir + '_log.mdp',
-                                                        '-maxwarn': '{}'.format(self._maxwarn)},
-                                           output_files={'-o': self._filename_dir + '.tpr'})
+
+        commandline_operation('gmx',
+                              arguments= ['grompp',
+                                          '-maxwarn {}'.format(self._maxwarn)],
+                              input_files={'-f': self._filename_dir + '.mdp',
+                                           '-c': self._filename_dir + '.gro',
+                                           '-p': self._filename_dir + '.top',
+                                           '-po': self._filename_dir + '_log.mdp'},
+                              output_files={'-o': self._filename_dir + '.tpr'})
 
         tpr_data = gmx.read_tpr(self._filename_dir + '.tpr')
 
@@ -204,14 +198,11 @@ class GromOrg:
             f.write(pdb_solvent)
 
         # pdb to gro + box
-        commandline_operation('gmx', 'editconf',
-                                           input_files={'-f': self._filename_dir + '_sol.pdb',
-                                                        '-box': ['{}'.format(s_box[0]),
-                                                                 '{}'.format(s_box[1]),
-                                                                 '{}'.format(s_box[2])],
-                                                        },
-
-                                           output_files={'-o': self._filename_dir + '_sol.gro'})
+        commandline_operation('gmx',
+                              arguments=['editconf',
+                                         '-box {} {} {}'.format(*s_box)],
+                              input_files={'-f': self._filename_dir + '_sol.pdb'},
+                              output_files={'-o': self._filename_dir + '_sol.gro'})
 
         # get solvent itp
         itp_solvent = DataStructure(sw_sol.get_itp_data().replace('LIG', 'SOL').replace('test', 'test_sol'))
@@ -230,12 +221,13 @@ class GromOrg:
         open(self._filename_dir + '_sol.top', 'w').close()  # temp file
 
         # solvate system with solvent
-        commandline_operation('gmx', 'solvate',
-                                           input_files={'-cp': self._filename_dir + '.gro',
-                                                        '-cs': self._filename_dir + '_sol.gro',
-                                                        '-scale': '{}'.format(self._solvent_scale),
-                                                        '-p': self._filename_dir + '_sol.top'},
-                                           output_files={'-o': self._filename_dir + '.gro'})
+        commandline_operation('gmx',
+                              arguments=['solvate',
+                                         '-scale {}'.format(self._solvent_scale)],
+                              input_files={'-cp': self._filename_dir + '.gro',
+                                           '-cs': self._filename_dir + '_sol.gro',
+                                           '-p': self._filename_dir + '_sol.top'},
+                              output_files={'-o': self._filename_dir + '.gro'})
 
         with open(self._filename_dir + '_sol.top', 'rb') as f:
             line_sol = f.read().decode('utf-8')
@@ -264,15 +256,16 @@ class GromOrg:
             md.run()
 
         trajectory_file = md.output.trajectory.result()
-        md_data_dir = md.output._work_dir.result()
+        md_data_dir = md.output.directory.result()
 
         if whole:
-            commandline_operation('gmx', 'trjconv',
-                                               stdin='0',
-                                               input_files={'-f': trajectory_file,
-                                                            '-s': self._filename_dir + '.tpr',
-                                                            '-pbc': 'whole'},
-                                               output_files={'-o': md_data_dir + '/{}.trr'.format(self._filename)})
+            commandline_operation('gmx',
+                                  arguments=['trjconv',
+                                             '-pbc whole'],
+                                  stdin='0',
+                                  input_files={'-f': trajectory_file,
+                                               '-s': self._filename_dir + '.tpr'},
+                                  output_files={'-o': md_data_dir + '/{}.trr'.format(self._filename)})
 
             trajectory_file = md_data_dir + '/{}.trr'.format(self._filename)
 
@@ -280,8 +273,7 @@ class GromOrg:
         energy = extract_energy(md_data_dir + '/ener.edr', initial=0)
 
         if self._delete_scratch:
-            import shutil
-            shutil.rmtree(md.output._work_dir.result())
+            shutil.rmtree(md.output.directory.result())
             # shutil.rmtree(self._work_dir)
 
         return trajectory, energy
@@ -304,7 +296,6 @@ class GromOrg:
         forces = extract_forces(trajectory_file, self._filename_dir + '.tpr', step=0)
 
         if self._delete_scratch:
-            import shutil
             shutil.rmtree(md.output._work_dir.result())
             # shutil.rmtree(self._work_dir)
 
