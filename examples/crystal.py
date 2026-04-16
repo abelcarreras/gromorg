@@ -67,7 +67,7 @@ params = {  # Run parameters
 
 # setup MD simulation
 calc = GromOrg(naphthalene, params=params, box=[8.194, 5.968, 8.669], angles=[90.0, 123.57, 90.0], supercell=[4, 4, 4],
-               silent=False, omp_num_threads=4)
+               silent=False, omp_num_threads=1, md_args={'-ntmpi': 1})
 
 # Run the simulation
 trajectory, energy = calc.run_md(whole=True)

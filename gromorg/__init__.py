@@ -1,4 +1,4 @@
-__version__ = '0.3.1'
+__version__ = '0.3.2'
 
 from gromorg.swisparam import SwissParams
 from gromorg.utils import extract_energy, extract_forces
@@ -23,6 +23,7 @@ class GromOrg:
                  solvent_scale=0.57,
                  maxwarn=0,
                  omp_num_threads=1,
+                 md_args=None,
                  silent=False,
                  delete_scratch=True):
 
@@ -36,6 +37,7 @@ class GromOrg:
         self._solvent = solvent
         self._solvent_scale = solvent_scale
         self._maxwarn = maxwarn
+        self._md_args = md_args if md_args is not None else {}
 
         os.putenv('GMX_MAXBACKUP', '-1')
         os.putenv('OMP_NUM_THREADS', '{}'.format(omp_num_threads))
@@ -246,8 +248,7 @@ class GromOrg:
         return top, itp
 
     def run_md(self, whole=True):
-
-        md = gmx.mdrun(input=self.get_tpr())
+        md = gmx.mdrun(input=self.get_tpr(), runtime_args=self._md_args)
 
         if self._silent:
             with captured_stdout(self._filename_dir + '.log'):

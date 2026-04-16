@@ -5,6 +5,7 @@ import tarfile
 from openbabel import openbabel
 from gromorg.cache import SimpleCache
 import numpy as np
+import warnings
 
 
 def set_molecule_name(mol2_text, resname='LIG', resnum=1):
@@ -59,8 +60,7 @@ class SwissParams:
         obConversion.ReadString(mol, self._structure.get_xyz())
 
         if len(mol.Separate()) > 1:
-            raise Exception('Structure has more than one molecule')
-            # mol = mol.Separate()[0]
+            warnings.warn('Structure has more than one molecule.')
 
         return set_molecule_name(obConversion.WriteString(mol), resname='test', resnum=1)
 
