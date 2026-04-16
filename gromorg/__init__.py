@@ -21,7 +21,7 @@ class GromOrg:
                  supercell=(1, 1, 1),
                  solvent=None,
                  solvent_scale=0.57,
-                 maxwarn=1,
+                 maxwarn=0,
                  omp_num_threads=1,
                  silent=False,
                  delete_scratch=True):
@@ -107,7 +107,7 @@ class GromOrg:
                              '#include "charmm27.ff/forcefield.itp"',
                              '#include "{}.itp"'.format(self._filename)],
                          'system': ['molecular system name'],
-                         'molecules': ['{} {}\n'.format('UNL1', num_mol)]}
+                         'molecules': ['{} {}\n'.format('test', num_mol)]}
 
         return DataStructure(topology_data)
 

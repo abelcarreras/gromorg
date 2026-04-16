@@ -19,8 +19,8 @@ Features
 Requirements
 ------------
 - PyQchem (https://github.com/abelcarreras/PyQchem)
-- Gromacs (gmxapi) (http://www.gromacs.org)
-- Openbabel v2.x (python API) (http://openbabel.org)
+- Gromacs 2025+ (gmxapi) (http://www.gromacs.org)
+- Openbabel v3.x (python API) (http://openbabel.org)
 - MDtraj (https://www.mdtraj.org)
 
 Basic example

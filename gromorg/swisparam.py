@@ -34,7 +34,7 @@ class SwissParams:
         mol = openbabel.OBMol()
         obConversion.ReadString(mol, self._structure.get_xyz())
 
-        return obConversion.WriteString(mol)
+        return obConversion.WriteString(mol).replace('UNL1', 'test') # change the molname
 
     def get_hashable_connectivity(self):
 
