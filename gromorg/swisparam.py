@@ -7,6 +7,30 @@ from gromorg.cache import SimpleCache
 import numpy as np
 
 
+def set_molecule_name(mol2_text, resname='LIG', resnum=1):
+    lines = mol2_text.split('\n')
+    new_lines = []
+    atom_section = False
+    for line in lines:
+        if "@<TRIPOS>ATOM" in line:
+            atom_section = True
+            new_lines.append(line)
+            continue
+        if "@<TRIPOS>BOND" in line:
+            atom_section = False
+
+        if atom_section and len(line.split()) >= 8:
+            parts = line.split()
+            parts[7] = resname
+            parts[6] = '{}'.format(resnum)
+
+            formatted_line = f"{parts[0]:>7} {parts[1]:<5} {parts[2]:>10} {parts[3]:>10} {parts[4]:>10} {parts[5]:<5} {parts[6]:>3} {parts[7]:<8} {parts[8]:>10}"
+            new_lines.append(formatted_line)
+        else:
+            new_lines.append(line)
+    return '\n'.join(new_lines)
+
+
 class SwissParams:
 
     BASE_URL = 'https://www.swissparam.ch:8443'
@@ -34,7 +58,11 @@ class SwissParams:
         mol = openbabel.OBMol()
         obConversion.ReadString(mol, self._structure.get_xyz())
 
-        return obConversion.WriteString(mol).replace('UNL1', 'test') # change the molname
+        if len(mol.Separate()) > 1:
+            raise Exception('Structure has more than one molecule')
+            # mol = mol.Separate()[0]
+
+        return set_molecule_name(obConversion.WriteString(mol), resname='test', resnum=1)
 
     def get_hashable_connectivity(self):
 

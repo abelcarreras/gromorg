@@ -1,4 +1,4 @@
-__version__ = '0.3'
+__version__ = '0.3.1'
 
 from gromorg.swisparam import SwissParams
 from gromorg.utils import extract_energy, extract_forces
@@ -42,7 +42,7 @@ class GromOrg:
 
         folder = os.getcwd()
 
-        self._work_dir = folder + 'gromorg_{}/'.format(os.getpid())
+        self._work_dir = folder + '/gromorg_{}/'.format(os.getpid())
         # os.mkdir(self._work_dir)
         try:
             os.mkdir(self._work_dir)

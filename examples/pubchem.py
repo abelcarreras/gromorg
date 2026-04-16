@@ -23,11 +23,14 @@ params = {# Run paramters
 
 
 # define simulation box with one molecule with solvent
-calc = GromOrg(structure, params=params, box=[30, 30, 30], supercell=[1, 1, 1], silent=False,
+calc = GromOrg(structure, params=params, box=[30, 30, 30], supercell=[2, 2, 2], silent=False,
                solvent=solvent, solvent_scale=0.5,
                )
 
 trajectory, energy = calc.run_md(whole=True)
+
+# save trajectory in GRO format
+trajectory.save('traj_test.gro')
 
 # get molecule (residue 0) at frame 5000 with close distance solvent molecules (<3.0 angstrom)
 molecule = get_cluster(trajectory, frame=5000, residue=0, cutoff=3.0, center=False)

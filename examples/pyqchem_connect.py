@@ -51,8 +51,10 @@ for iframe in np.linspace(2000, 5000, 500):
                           jobtype='sp',
                           exchange='b3lyp',
                           cis_n_roots=1,
+                          cis_singlets=True,
+                          cis_triplets=False,
                           basis='sto-3g',
-                          unrestricted=True)
+                          unrestricted=False)
 
     # parse qchem output
     data = get_output_from_qchem(qc_input,
