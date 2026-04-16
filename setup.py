@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 def get_version_number():
@@ -18,7 +18,7 @@ setup(name='gromorg',
       install_requires=['numpy', 'openbabel', 'gmxapi', 'mdtraj', 'lxml'],
       author='Abel Carreras',
       author_email='abelcarreras83@gmail.com',
-      packages=['gromorg'],
+      packages=find_packages(),
       url='https://github.com/abelcarreras/gromorg',
       classifiers=[
           "Programming Language :: Python",
