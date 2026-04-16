@@ -9,8 +9,8 @@ Requirements
 ------------
 
 - PyQchem (https://github.com/abelcarreras/PyQchem)
-- Gromacs (gmxapi) (http://www.gromacs.org)
-- Openbabel [Tested on v2.4.1] (python API) (http://openbabel.org)
+- Gromacs (gmxapi) [Tested on 2025/0.4.1] (http://www.gromacs.org)
+- Openbabel [Tested on v3.1] (python API) (http://openbabel.org)
 - MDtraj (https://www.mdtraj.org)
 
 Install
